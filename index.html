@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Director: brief to storyboard to shot, on iPhone</title>
+<meta name="description" content="Director is an iPhone app that turns a client brief into a shot list and a storyboard, then guides each shot with a live overlay on the camera.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #242628;
+  --surface: #303235;
+  --ink: #f3efe6;
+  --muted: #bdb9b0;
+  --accent: #d7f23d;
+  --accent-ink: #242628;
+  --field-1: #d7f23d;  --field-1-ink: #242628;
+  --field-2: #ff5a1f;  --field-2-ink: #242628;
+  --paper: #f3efe6;    --paper-ink: #242628;
+  --lime: #d7f23d;
+
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --step-display: clamp(4.5rem, 1rem + 13vw, 11rem);
+
+  --margin: clamp(16px, 3vw, 40px);
+  --gap: clamp(120px, 14vw, 200px);
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: var(--step-body); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+h1, h2, h3, .mark, .tab, .cta form, footer .word { font-family: "DM Sans", system-ui, sans-serif; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.04em; line-height: 0.95; }
+h2 { font-size: var(--step-head); }
+p { max-width: 46ch; }
+.wrap { padding-inline: var(--margin); }
+.btn {
+  display: inline-flex; align-items: center; gap: .5em;
+  background: var(--accent); color: var(--accent-ink);
+  font: 500 var(--step-body)/1 inherit; text-decoration: none;
+  padding: 18px 26px; border: 0; cursor: pointer;
+  transition: transform .18s var(--ease), background .18s;
+}
+.btn:hover { background: #c8e22f; }
+.btn:active { transform: scale(.97); }
+
+/* Hero: a stack of tabbed production folders */
+.top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 20px var(--margin); }
+.top .mark { grid-column: 2; font-weight: 600; font-size: 1.125rem; letter-spacing: -0.02em; text-decoration: none; }
+.top nav { grid-column: 3; justify-self: end; display: flex; gap: 22px; font-size: 0.9375rem; }
+.top nav a { text-decoration: none; }
+.top nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hero { min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
+.hero-text { text-align: center; padding: clamp(24px, 5vh, 60px) var(--margin) 0; }
+.hero h1 { font-size: var(--step-display); letter-spacing: -0.05em; line-height: .85; }
+.hero .lead { font-size: var(--step-lead); margin: 28px auto 0; max-width: 40ch; line-height: 1.35; }
+.folders { position: relative; flex: 1; margin-top: clamp(44px, 6vh, 72px); min-height: 380px; }
+.folder {
+  position: absolute; left: 7%; right: 7%; top: calc(var(--i) * 44px); bottom: 0;
+  background: var(--c); color: var(--ci); text-decoration: none;
+  transition: transform .25s var(--ease);
+}
+.folder:hover { transform: translateY(-8px); }
+.folder .tab {
+  position: absolute; bottom: 100%; left: var(--x); height: 40px; padding: 0 30px;
+  display: flex; align-items: center; background: var(--c); font-weight: 500; font-size: 1.0625rem; white-space: nowrap;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+}
+.folder.front { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 40px; padding: 28px 32px; }
+.folder.front .peek { display: flex; gap: 14px; justify-content: end; }
+.folder.front .peek img { width: clamp(72px, 8.5vw, 132px); aspect-ratio: 3/4; object-fit: cover; object-position: 50% 55%; }
+.folder.front .peek img:nth-child(2) { transform: translateY(26px); }
+.folder.front .peek img:nth-child(4) { transform: translateY(18px); }
+
+/* Storyboard index with preview */
+.index { padding-top: var(--gap); display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 5vw, 80px); align-items: start; }
+.index .frame { position: sticky; top: 40px; background: var(--surface); padding: clamp(20px, 3vw, 40px); display: grid; place-items: center; }
+.index .frame img { width: min(100%, 360px); aspect-ratio: 9/16; object-fit: cover; transition: opacity .24s; }
+.index .frame figcaption { margin-top: 18px; font-size: var(--step-small); color: var(--muted); width: min(100%, 360px); }
+.index h2 { margin-bottom: 28px; }
+.index .intro { margin-bottom: 40px; }
+.projects { display: flex; gap: 26px; margin-bottom: 28px; }
+.projects button {
+  background: none; border: 0; font: 500 1.125rem/1 inherit; color: var(--muted); cursor: pointer; padding: 6px 0;
+}
+.projects button[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-underline-offset: 8px; text-decoration-thickness: 3px; }
+.shots { list-style: none; }
+.shots li button {
+  width: 100%; text-align: left; background: none; border: 0; color: var(--ink); cursor: pointer;
+  display: grid; grid-template-columns: 3.2em 1fr; gap: 4px 12px; padding: 14px 12px; font: inherit;
+  transition: background .2s, opacity .2s;
+}
+.shots li + li button { margin-top: 2px; }
+.shots li button:hover, .shots li button[aria-current="true"] { background: var(--surface); }
+.shots .id { font-weight: 600; font-variant-numeric: tabular-nums; }
+.shots .t { font-weight: 500; }
+.shots .r { grid-column: 2; font-size: var(--step-small); color: var(--muted); }
+.shots .inline { display: none; }
+
+/* How it works: a call-sheet slip */
+.how { padding-top: var(--gap); display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; align-items: start; }
+.how .copy { grid-column: 1 / 6; }
+.how .copy p { margin-top: 28px; }
+.slip {
+  grid-column: 7 / 12; background: var(--paper); color: var(--paper-ink);
+  padding: 36px 32px 64px; font-size: 1rem; font-variant-numeric: tabular-nums;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), 95% 100%, 90% calc(100% - 14px), 85% 100%, 80% calc(100% - 14px), 75% 100%, 70% calc(100% - 14px), 65% 100%, 60% calc(100% - 14px), 55% 100%, 50% calc(100% - 14px), 45% 100%, 40% calc(100% - 14px), 35% 100%, 30% calc(100% - 14px), 25% 100%, 20% calc(100% - 14px), 15% 100%, 10% calc(100% - 14px), 5% 100%, 0 calc(100% - 14px));
+}
+.slip h3 { font-size: 1.125rem; letter-spacing: -0.01em; line-height: 1.2; margin-top: 28px; }
+.slip h3:first-child { margin-top: 0; }
+.slip .row { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+.slip .row span:nth-child(2) { flex: 1; border-bottom: 4px dotted rgba(36, 38, 40, .4); transform: translateY(-4px); }
+.slip .total { margin: 32px -32px 0; background: var(--paper-ink); color: var(--paper); padding: 12px 32px; display: flex; justify-content: space-between; font-weight: 500; }
+
+/* Features: stacking colour sheets */
+.features { padding-top: var(--gap); }
+.features > h2 { padding-inline: var(--margin); margin-bottom: 48px; }
+.sheet {
+  min-height: 80svh; padding-block: 48px 0;
+  background: var(--c); color: var(--ci);
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; padding-inline: var(--margin);
+}
+.sheet h3 { grid-column: 1 / 7; font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 72px; height: 72px; }
+.sheet { grid-template-rows: 72px auto 1fr; }
+.sheet .body { grid-column: 1 / 6; grid-row: 2; align-self: start; padding: 20px 0 48px; }
+.sheet .body p + p { margin-top: 14px; }
+.sheet .pic { grid-column: 7 / 13; grid-row: 1 / 4; padding-top: 72px; display: flex; align-items: end; justify-content: center; overflow: hidden; }
+
+/* Interface fragments drawn from the app */
+.ui { font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; letter-spacing: 0; }
+.phone { width: min(100%, 380px); background: #0d0e10; color: #e8e8ea; padding: 22px 18px 26px; }
+.phone .ttl { font-weight: 600; font-size: 1.0625rem; margin-bottom: 14px; }
+.card { background: #1c1d21; padding: 14px; margin-top: 10px; }
+.card .h { display: flex; gap: 10px; font-weight: 600; font-size: 0.9375rem; }
+.card .h span:first-child { color: #8e8e93; }
+.card .q { margin-top: 8px; font-size: 0.875rem; color: #c7c7cc; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chips span { background: #2c2d33; color: #e8e8ea; font-size: 0.8125rem; padding: 4px 10px; border-radius: 999px; }
+.board { display: flex; gap: 12px; align-items: end; }
+.board img { width: clamp(100px, 14vw, 220px); aspect-ratio: 9/16; object-fit: cover; }
+.board img:nth-child(2) { margin-bottom: 40px; }
+.cam { position: relative; width: min(100%, 340px); aspect-ratio: 9/16; overflow: hidden; background: #111; }
+.cam { background: #1b1b1d; }
+.cam > img { width: 100%; height: 100%; object-fit: cover; opacity: .35; }
+.cam .box { position: absolute; left: 22%; top: 30%; width: 44%; height: 54%; border: 3px dashed var(--lime); }
+.cam .hint { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); white-space: nowrap; background: rgba(0,0,0,.72); color: var(--lime); font-weight: 600; font-size: 0.9375rem; padding: 10px 16px; }
+.cam .rec { position: absolute; left: 50%; bottom: 26px; width: 62px; height: 62px; transform: translateX(-50%); border-radius: 50%; background: #ff5a1f; box-shadow: 0 0 0 6px rgba(255,255,255,.35); } /* taste-skill-ignore: record button ring inside the camera fragment */
+.cam .mini { position: absolute; top: 16px; right: 16px; width: 64px; aspect-ratio: 9/16; object-fit: cover; }
+.album { width: min(100%, 380px); background: #0d0e10; color: #e8e8ea; padding: 20px 18px; }
+.album .ttl { font-weight: 600; margin-bottom: 4px; }
+.album .sub { font-size: 0.8125rem; color: #8e8e93; margin-bottom: 14px; }
+.album .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.album .grid img { aspect-ratio: 1; object-fit: cover; width: 100%; }
+
+/* Closing sentence with a blank */
+.cta { padding: var(--gap) var(--margin); }
+.cta form { font-size: clamp(1.5rem, 1rem + 1.8vw, 2.25rem); font-weight: 500; line-height: 1.45; max-width: 26em; letter-spacing: -0.02em; }
+.cta input {
+  font: inherit; width: 9em; height: 1.4em; border: 0; padding: 0 .3em; vertical-align: baseline;
+  background: var(--surface); color: var(--ink);
+}
+.cta input::placeholder { color: var(--muted); }
+.cta button { font: inherit; height: 1.4em; padding: 0 .4em; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; transition: transform .18s var(--ease); }
+.cta button:active { transform: scale(.96); }
+.cta .after { margin-top: 24px; font-size: 1rem; color: var(--muted); }
+
+/* Footer: the back of the sheet */
+footer {
+  min-height: 100svh; background: var(--ink); color: var(--bg);
+  display: grid; grid-template-rows: auto 1fr auto; padding: 40px var(--margin) 24px;
+}
+footer .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; font-size: 1rem; }
+footer .cols ul { list-style: none; }
+footer .cols li:first-child { font-weight: 600; }
+footer .cols li + li { color: #5c5e60; margin-top: 6px; }
+footer .word { grid-row: 3; }
+footer .word svg { width: 100%; height: auto; display: block; }
+footer .legal { font-size: var(--step-small); margin-top: 20px; color: #5c5e60; }
+
+/* Entrances */
+.rise { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease), transform .7s var(--ease); transition-delay: calc(var(--d, 0) * 80ms); }
+.rise.in { opacity: 1; transform: none; }
+.no-js .rise { opacity: 1; transform: none; }
+.drift { animation: drift 14s ease-in-out infinite alternate; }
+@keyframes drift { from { transform: scale(1); } to { transform: scale(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise { opacity: 1; transform: none; transition: none; }
+  .drift { animation: none; }
+  .folder, .btn, .cta button { transition: none; }
+}
+
+@media (max-width: 820px) {
+  .top { grid-template-columns: auto 1fr; }
+  .top .mark { grid-column: 1; }
+  .top nav { grid-column: 2; gap: 16px; }
+  .top nav a:not(.go) { display: none; }
+  .hero h1 { font-size: 22vw; }
+  .hero .lead { font-size: 1.0625rem; }
+  .folder { left: 0; right: 0; top: calc(var(--i) * 40px); }
+  .folder.front .peek img { width: 21vw; }
+  .folder.front .peek img:nth-child(2), .folder.front .peek img:nth-child(4) { transform: none; }
+  .folder .tab { height: 32px; padding: 0 18px; font-size: 0.9375rem; }
+  .folder.front { grid-template-columns: 1fr; padding: 24px 16px; }
+  .folder.front .tab { left: auto; right: 16px; }
+  .folder.front .btn { width: 100%; justify-content: center; }
+  .folder.front .peek { justify-content: start; }
+  .index { grid-template-columns: 1fr; }
+  .index .frame { display: none; }
+  .shots .inline { display: block; grid-column: 1 / -1; width: 100%; max-width: 280px; aspect-ratio: 9/16; object-fit: cover; margin-top: 10px; }
+  .shots li button:not([aria-current="true"]) .inline { display: none; }
+  .how .copy, .slip { grid-column: 1 / -1; }
+  .slip { margin-top: 40px; padding-inline: 20px; }
+  .slip .total { margin-inline: -20px; padding-inline: 20px; }
+  .sheet { grid-template-columns: 1fr; grid-template-rows: auto; min-height: 0; padding-top: 32px; }
+  .sheet h3 { grid-column: 1; font-size: 1.375rem; line-height: 52px; height: 52px; }
+  .sheet .pic { grid-column: 1; grid-row: auto; padding-top: 8px; }
+  .sheet .body { grid-column: 1; grid-row: auto; padding: 24px 0 40px; }
+  footer .cols { grid-template-columns: 1fr 1fr; row-gap: 32px; }
+}
+</style>
+</head>
+<body class="no-js">
+<script>document.body.classList.remove('no-js')</script>
+
+<header class="hero">
+  <div class="top">
+    <a class="mark" href="#">Director</a>
+    <nav aria-label="Main">
+      <a href="#storyboard">Storyboard</a>
+      <a href="#how">How it works</a>
+      <a class="go" href="#join">Join the beta</a>
+    </nav>
+  </div>
+  <div class="hero-text">
+    <h1 class="rise">Director</h1>
+    <p class="lead rise" style="--d:1">An iPhone app that turns a client brief into a shot list and a storyboard, then guides every shot with a live overlay on the camera.</p>
+  </div>
+  <div class="folders" aria-label="What Director does">
+    <a class="folder" href="#how" style="--i:0;--c:#33363a;--ci:var(--ink);--x:4%"><span class="tab">The brief</span></a>
+    <a class="folder" href="#storyboard" style="--i:1;--c:#3e4246;--ci:var(--ink);--x:24%"><span class="tab">Shot list</span></a>
+    <a class="folder" href="#storyboard" style="--i:2;--c:var(--field-1);--ci:var(--field-1-ink);--x:44%"><span class="tab">Storyboard</span></a>
+    <a class="folder" href="#features" style="--i:3;--c:var(--field-2);--ci:var(--field-2-ink);--x:64%"><span class="tab">On set</span></a>
+    <div class="folder front" style="--i:4;--c:var(--paper);--ci:var(--paper-ink);--x:80%">
+      <span class="tab">Your takes</span>
+      <a class="btn" href="#join">Join the iPhone beta</a>
+      <div class="peek">
+        <img src="img/journey-s01.jpg" alt="Storyboard panel: a woman in silhouette watches Earth through a spacecraft window" width="540" height="960">
+        <img src="img/journey-s05.jpg" alt="Storyboard panel: a hand touches a photograph of Earth on a desk" width="540" height="960">
+        <img src="img/flight-s03.jpg" alt="Storyboard panel: an airliner passes low between skyscrapers, seen from the ground" width="540" height="960">
+        <img src="img/flight-s06.jpg" alt="Storyboard panel: a young man runs along a sidewalk" width="540" height="960">
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="storyboard" class="index wrap" aria-labelledby="sb-h">
+    <figure class="frame rise">
+      <img id="preview" src="img/journey-s01.jpg" alt="" width="540" height="960">
+      <figcaption id="cap">S01 · Wide, low angle, pull out on a gimbal. Technique: silhouette.</figcaption>
+    </figure>
+    <div>
+      <h2 id="sb-h" class="rise">Every shot, drawn before you film</h2>
+      <p class="intro rise" style="--d:1">Two real plans made in Director from a one-paragraph idea. Pick a shot to see its panel and the camera recipe behind it.</p>
+      <div class="projects rise" style="--d:2" role="group" aria-label="Project">
+        <button type="button" data-p="journey" aria-pressed="true">Last Journey Beyond Earth</button>
+        <button type="button" data-p="flight" aria-pressed="false">Falling Flight</button>
+      </div>
+      <ul class="shots rise" style="--d:3" id="shots"></ul>
+    </div>
+  </section>
+
+  <section id="how" class="how wrap" aria-labelledby="how-h">
+    <div class="copy">
+      <h2 id="how-h" class="rise">From brief to wrap</h2>
+      <p class="rise" style="--d:1">Paste the brief or say your idea out loud. Director writes the plan with ChatGPT, draws the boards, then stays on the camera with you until every shot is in the can.</p>
+    </div>
+    <div class="slip rise" style="--d:2" aria-label="The steps of a shoot">
+      <h3>Before the shoot</h3>
+      <div class="row"><span>Paste or dictate the brief</span><span></span><span>Brief</span></div>
+      <div class="row"><span>Choose shots, format, gear, dialog</span><span></span><span>Options</span></div>
+      <div class="row"><span>Shot list with script lines</span><span></span><span>Plan</span></div>
+      <div class="row"><span>One storyboard panel per shot</span><span></span><span>Boards</span></div>
+      <h3>On set</h3>
+      <div class="row"><span>Panel over the live camera</span><span></span><span>Overlay</span></div>
+      <div class="row"><span>One cue at a time: angle, size, light</span><span></span><span>Guide</span></div>
+      <div class="row"><span>Record past the clean seconds</span><span></span><span>Take</span></div>
+      <h3>After</h3>
+      <div class="row"><span>Mark the best take per shot</span><span></span><span>Review</span></div>
+      <div class="row"><span>Album per version in Photos</span><span></span><span>Save</span></div>
+      <div class="total"><span>Every shot planned, drawn and filmed</span><span>Wrap</span></div>
+    </div>
+  </section>
+
+  <section id="features" class="features" aria-labelledby="feat-h">
+    <h2 id="feat-h" class="rise">What it does on the day</h2>
+
+    <article class="sheet" style="--n:0;--c:var(--field-1);--ci:var(--field-1-ink)">
+      <h3>A shot list a director would write</h3>
+      <div class="body">
+        <p>Each shot gets a size, angle, lens, move and gear, plus one cinematic technique: foreground framing, silhouette, rack focus, worm's-eye. No two shots repeat the same size and angle.</p>
+        <p>Choose voice-over or dialog and every shot carries its line.</p>
+      </div>
+      <div class="pic">
+        <div class="phone ui" data-ui>
+          <div class="ttl">Last Journey Beyond Earth · 8 shots</div>
+          <div class="card"><div class="h"><span>S01</span><span>Earth disappears behind them</span></div>
+            <div class="chips"><span>Wide</span><span>Low angle</span><span>0.5x</span><span>Gimbal</span><span>Silhouette</span></div></div>
+          <div class="card"><div class="h"><span>S04</span><span>The journey begins to hurt</span></div>
+            <div class="chips"><span>Close-up</span><span>High angle</span><span>Handheld</span><span>Foreground framing</span></div></div>
+          <div class="card"><div class="h"><span>S05</span><span>A small reminder of Earth</span></div>
+            <div class="q">Maya gently touches a photograph of Earth.</div>
+            <div class="chips"><span>Insert</span><span>Top down</span><span>Tripod</span></div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="sheet" style="--n:1;--c:var(--paper);--ci:var(--paper-ink)">
+      <h3>Boards with the same faces</h3>
+      <div class="body">
+        <p>Director lays out each frame in 3D first: where the camera stands, where people stand and which way they face. The final drawing follows that layout, with your characters kept the same from panel to panel.</p>
+      </div>
+      <div class="pic board">
+        <img class="drift" src="img/journey-s02.jpg" alt="Storyboard panel: a pregnant woman rests with a hand on her belly" width="540" height="960" loading="lazy">
+        <img src="img/journey-s03.jpg" alt="Storyboard panel: a dog sits beside the woman on a bunk, seen from above" width="540" height="960" loading="lazy">
+        <img src="img/journey-s08.jpg" alt="Storyboard panel: the woman and her dog stand before a window full of stars" width="540" height="960" loading="lazy">
+      </div>
+    </article>
+
+    <article class="sheet" style="--n:2;--c:var(--field-2);--ci:var(--field-2-ink)">
+      <h3>A guide on the camera</h3>
+      <div class="body">
+        <p>The panel floats over the live view, small, large or see-through. On-device vision checks the frame against it and gives one cue at a time: hold the phone level, step back, lower the camera, the light is behind them.</p>
+      </div>
+      <div class="pic">
+        <div class="cam ui" data-ui aria-label="Camera screen with the storyboard panel and a live cue">
+          <img src="img/flight-s05.jpg" alt="Storyboard panel S05 laid see-through over the camera, the overlay mode" width="540" height="960" loading="lazy">
+          <div class="box"></div>
+          <div class="hint">Step a little closer</div>
+          <div class="rec"></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="sheet" style="--n:3;--c:var(--surface);--ci:var(--ink)">
+      <h3>Takes sorted for the edit</h3>
+      <div class="body">
+        <p>Mark the best take of each shot. Director saves them to Photos in one album per version, so hook 1 and hook 2 land in the edit already sorted.</p>
+      </div>
+      <div class="pic">
+        <div class="album ui" data-ui>
+          <div class="ttl">Falling Flight · Hook 1</div>
+          <div class="sub">8 best takes</div>
+          <div class="grid">
+            <img src="img/flight-s01.jpg" alt="" loading="lazy"><img src="img/flight-s02.jpg" alt="" loading="lazy"><img src="img/flight-s03.jpg" alt="" loading="lazy">
+            <img src="img/flight-s04.jpg" alt="" loading="lazy"><img src="img/flight-s06.jpg" alt="" loading="lazy"><img src="img/flight-s07.jpg" alt="" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section id="join" class="cta" aria-labelledby="join-h">
+    <h2 id="join-h" class="rise" style="margin-bottom:32px">Join the beta</h2>
+    <form class="rise" style="--d:1" id="beta">
+      <label>Send the TestFlight invite to <input type="email" name="email" placeholder="your email" required aria-label="Your email"></label> <button type="submit">please</button>
+    </form>
+    <p class="after rise" style="--d:2">This opens an email to the developer with your address filled in. Director is in a private beta on iPhone.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="cols">
+    <ul><li>Director</li><li>An iPhone app for creators and small video teams</li></ul>
+    <ul><li>On this page</li><li><a href="#storyboard">Storyboard</a></li><li><a href="#how">How it works</a></li><li><a href="#features">On the day</a></li></ul>
+    <ul><li>Works with</li><li>iPhone, iOS 26 or later</li><li>Your ChatGPT account</li></ul>
+    <ul><li>Contact</li><li><a href="mailto:sefruitlife.id@gmail.com">sefruitlife.id@gmail.com</a></li></ul>
+  </div>
+  <div class="word">
+    <svg viewBox="0 0 1000 205" role="img" aria-label="Director"><text x="-6" y="178" font-family="DM Sans, system-ui, sans-serif" font-weight="700" font-size="248" letter-spacing="-10" textLength="1010" lengthAdjust="spacingAndGlyphs" fill="currentColor">Director</text></svg>
+    <p class="legal">© 2026 Director. Storyboard panels on this page are from plans made in the app.</p>
+  </div>
+</footer>
+
+<script>
+const plans = {
+  journey: [
+    ["S01","Earth disappears behind them","Wide · Low angle · Pull out · Gimbal","Silhouette"],
+    ["S02","A mother faces the unknown","Medium close-up · Eye level · Push in · Gimbal","Shallow focus"],
+    ["S03","Her loyal friend stays close","Medium wide · High angle · Static · Tripod","Two shot"],
+    ["S04","The journey begins to hurt","Close-up · High angle · Push in · Handheld","Foreground framing"],
+    ["S05","A small reminder of Earth","Insert · Top down · Static · Tripod","Cut-in detail"],
+    ["S06","Deep space becomes terrifying","Medium · Dutch angle · Pan · Handheld","Dutch angle"],
+    ["S07","She finds strength to continue","Close-up · Low angle · Arc · Gimbal","Arc"],
+    ["S08","Together into the endless stars","Wide · Eye level · Pull out · Gimbal","Negative space"],
+  ],
+  flight: [
+    ["S01","Plane struggles above the city","Extreme wide · Low angle · Tilt · Handheld","Low angle hero"],
+    ["S02","People notice the falling plane","Medium wide · Eye level · Pan · Handheld","Two shot"],
+    ["S03","Plane passes dangerously close","Wide · Low angle · Follow · Handheld","Worm's-eye"],
+    ["S04","Man watches the sky in fear","Close-up · High angle · Push in · Handheld","Shallow focus"],
+    ["S05","Woman sees plane in glass","Medium close-up · Eye level · Truck · Handheld","Reflections"],
+    ["S06","Young man runs for safety","Full · Eye level · Follow · Handheld","Tracking"],
+    ["S07","Aircraft tilts toward the buildings","Medium · Dutch angle · Pan · Handheld","Dutch angle"],
+    ["S08","Plane disappears behind the skyline","Wide · High angle · Pull out · Handheld","Silhouette"],
+  ],
+};
+const list = document.getElementById('shots'), preview = document.getElementById('preview'), cap = document.getElementById('cap');
+let project = 'journey';
+function src(p, i) { return `img/${p}-s${String(i + 1).padStart(2, '0')}.jpg`; }  // taste-skill-ignore: file names
+function select(i) {
+  const s = plans[project][i];
+  preview.style.opacity = 0;
+  setTimeout(() => { preview.src = src(project, i); preview.alt = `Storyboard panel ${s[0]}: ${s[1]}`; preview.style.opacity = 1; }, 120);
+  cap.textContent = `${s[0]} · ${s[2]}. Technique: ${s[3].toLowerCase()}.`;
+  list.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-current', j === i));
+}
+function render() {
+  list.innerHTML = plans[project].map((s, i) => `<li><button type="button"><span class="id">${s[0]}</span><span class="t">${s[1]}</span><span class="r">${s[2]} · ${s[3]}</span><img class="inline" src="${src(project, i)}" alt="Storyboard panel ${s[0]}: ${s[1]}" loading="lazy"></button></li>`).join('');
+  list.querySelectorAll('button').forEach((b, i) => {
+    b.addEventListener('mouseenter', () => select(i));
+    b.addEventListener('focus', () => select(i));
+    b.addEventListener('click', () => select(i));
+  });
+  select(0);
+}
+document.querySelectorAll('.projects button').forEach(b => b.addEventListener('click', () => {
+  project = b.dataset.p;
+  document.querySelectorAll('.projects button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  render();
+}));
+render();
+
+document.getElementById('beta').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = e.target.email.value;
+  location.href = `mailto:sefruitlife.id@gmail.com?subject=${encodeURIComponent('Director beta')}&body=${encodeURIComponent('Please send the TestFlight invite to ' + email)}`;
+});
+
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15 });
+document.querySelectorAll('.rise').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
