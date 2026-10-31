@@ -42,7 +42,7 @@ body {
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
 :focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
-h1, h2, h3, .mark, .tab, .cta form, footer .word { font-family: "DM Sans", system-ui, sans-serif; }
+h1, h2, h3, .mark, .tab, footer .word { font-family: "DM Sans", system-ui, sans-serif; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.04em; line-height: 0.95; }
 h2 { font-size: var(--step-head); }
 p { max-width: 46ch; }
@@ -165,17 +165,24 @@ p { max-width: 46ch; }
 .album .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
 .album .grid img { aspect-ratio: 1; object-fit: cover; width: 100%; }
 
-/* Closing sentence with a blank */
+/* Join the beta: heading, one line, one form */
 .cta { padding: var(--gap) var(--margin); }
-.cta form { font-size: clamp(1.5rem, 1rem + 1.8vw, 2.25rem); font-weight: 500; line-height: 1.45; max-width: 26em; letter-spacing: -0.02em; }
+.cta h2 { font-size: var(--step-display); letter-spacing: -0.05em; line-height: .9; }
+.cta .lead { margin-top: 28px; font-size: var(--step-lead); line-height: 1.4; max-width: 34ch; }
+.cta form { margin-top: 40px; display: flex; gap: 12px; max-width: 600px; }
 .cta input {
-  font: inherit; width: 9em; height: 1.4em; border: 0; padding: 0 .3em; vertical-align: baseline;
-  background: var(--surface); color: var(--ink);
+  flex: 1; min-width: 0; height: 60px; padding: 0 20px; border: 0;
+  font: 400 var(--step-body)/1 inherit; background: var(--surface); color: var(--ink);
 }
 .cta input::placeholder { color: var(--muted); }
-.cta button { font: inherit; height: 1.4em; padding: 0 .4em; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; transition: transform .18s var(--ease); }
-.cta button:active { transform: scale(.96); }
-.cta .after { margin-top: 24px; font-size: 1rem; color: var(--muted); }
+.cta button {
+  height: 60px; padding: 0 28px; border: 0; cursor: pointer; white-space: nowrap;
+  font: 600 var(--step-body)/1 inherit; background: var(--accent); color: var(--accent-ink);
+  transition: transform .18s var(--ease), background .18s;
+}
+.cta button:hover { background: #c8e22f; }
+.cta button:active { transform: scale(.97); }
+.cta .after { margin-top: 16px; font-size: var(--step-small); color: var(--muted); }
 
 /* Footer: the back of the sheet */
 footer {
@@ -217,6 +224,9 @@ footer .legal { font-size: var(--step-small); margin-top: 20px; color: #5c5e60; 
   .folder .tab { height: 32px; padding: 0 18px; font-size: 0.9375rem; }
   .folder.front { grid-template-columns: 1fr; padding: 24px 16px; }
   .folder.front .tab { left: auto; right: 16px; }
+  .cta form { flex-direction: column; }
+  .cta input { flex: none; }
+  .cta button { width: 100%; }
   .folder.front .btn { width: 100%; justify-content: center; }
   .folder.front .peek { justify-content: start; }
   .index { grid-template-columns: 1fr; }
@@ -376,11 +386,13 @@ footer .legal { font-size: var(--step-small); margin-top: 20px; color: #5c5e60; 
   </section>
 
   <section id="join" class="cta" aria-labelledby="join-h">
-    <h2 id="join-h" class="rise" style="margin-bottom:32px">Join the beta</h2>
-    <form class="rise" style="--d:1" id="beta">
-      <label>Send the TestFlight invite to <input type="email" name="email" placeholder="your email" required aria-label="Your email"></label> <button type="submit">please</button>
+    <h2 id="join-h" class="rise">Join the beta</h2>
+    <p class="lead rise" style="--d:1">Director is in a private beta on iPhone. Leave your email and the TestFlight invite comes to you.</p>
+    <form class="rise" style="--d:2" id="beta">
+      <input type="email" name="email" placeholder="you@example.com" required aria-label="Your email" autocomplete="email">
+      <button type="submit">Request invite</button>
     </form>
-    <p class="after rise" style="--d:2">This opens an email to the developer with your address filled in. Director is in a private beta on iPhone.</p>
+    <p class="after rise" style="--d:3">Opens your email app with the request filled in.</p>
   </section>
 </main>
 
